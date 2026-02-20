@@ -90,19 +90,29 @@ export async function saveGeneratedImage(
   return `/generated/${fileName}`;
 }
 
+// In-memory cache for swatch files (only 6 fixed swatches, safe to keep in memory)
+const swatchCache = new Map<string, { base64: string; mimeType: string }>();
+
 /**
  * Read a file as base64. Used for preset swatches in public/swatches.
+ * Results are cached in memory to avoid repeated disk reads on warm invocations.
  */
 export async function readPublicFileAsBase64(publicPath: string): Promise<{
   base64: string;
   mimeType: string;
 }> {
+  const cached = swatchCache.get(publicPath);
+  if (cached) return cached;
+
   const normalizedPath = publicPath.replace(/^\//, "");
   const absolutePath = path.join(process.cwd(), "public", normalizedPath);
   const fileBuffer = await readFile(absolutePath);
   const base64 = fileBuffer.toString("base64");
   const mimeType = getMimeTypeFromPath(publicPath);
-  return { base64, mimeType };
+
+  const result = { base64, mimeType };
+  swatchCache.set(publicPath, result);
+  return result;
 }
 
 export function extensionFromMimeType(mimeType: string): string {

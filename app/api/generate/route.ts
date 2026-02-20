@@ -67,12 +67,6 @@ export async function POST(request: NextRequest) {
     const userImageBase64 = croppedBuffer.toString("base64");
     const userImageMimeType = croppedMimeType;
 
-    // Persist the cropped original (2:3) for before/after comparison.
-    const originalImageUrl = await saveUploadedOriginal(
-      croppedBuffer,
-      extensionFromMimeType(croppedMimeType),
-    );
-
     // --- Resolve selected fabric swatch -----------------------------------
 
     const selectedFabric = selectedFabricId
@@ -116,47 +110,44 @@ Generate the transformed furniture image.`;
       | { type: "text"; text: string }
       | { type: "image"; image: string; mimeType: string }
     > = [
-      { type: "text", text: prompt },
+      {
+        type: "text",
+        text:
+          prompt +
+          "\n\nUse the second image as the exact style / texture reference for the new upholstery fabric.",
+      },
       {
         type: "image",
         image: userImageBase64,
         mimeType: userImageMimeType,
       },
+      {
+        type: "image",
+        image: referenceImageBase64,
+        mimeType: referenceImageMimeType,
+      },
     ];
 
-    // Always append the selected swatch as second image reference.
-    content.push({
-      type: "image",
-      image: referenceImageBase64,
-      mimeType: referenceImageMimeType,
-    });
-    content[0] = {
-      type: "text",
-      text:
-        prompt +
-        "\n\nUse the second image as the exact style / texture reference for the new upholstery fabric.",
-    };
+    // --- Run Gemini call and original upload in parallel --------------------
 
-    // --- Call Gemini image generation ---------------------------------------
+    const ext = extensionFromMimeType(croppedMimeType);
 
-    const result = await generateText({
-      model: google("gemini-3-pro-image-preview"),
-      messages: [
-        {
-          role: "user",
-          content: content,
-        },
-      ],
-      providerOptions: {
-        google: {
-          responseModalities: ["IMAGE"],
-          imageConfig: {
-            aspectRatio: "2:3",
-            imageSize: "1K",
+    const [originalImageUrl, result] = await Promise.all([
+      saveUploadedOriginal(croppedBuffer, ext),
+      generateText({
+        model: google("gemini-3-pro-image-preview"),
+        messages: [{ role: "user", content }],
+        providerOptions: {
+          google: {
+            responseModalities: ["IMAGE"],
+            imageConfig: {
+              aspectRatio: "2:3",
+              imageSize: "1K",
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
 
     // --- Extract generated image from the response --------------------------
 
@@ -180,7 +171,7 @@ Generate the transformed furniture image.`;
       );
     }
 
-    // Persist the generated image locally.
+    // Upload generated image to Supabase (sequential — needs Gemini result).
     const generatedBuffer = Buffer.from(generatedImageBase64, "base64");
     const generatedImageUrl = await saveGeneratedImage(
       generatedBuffer,

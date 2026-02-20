@@ -45,7 +45,9 @@ export async function cropTo2x3(buffer: Buffer, mimeType: string): Promise<{
       width: extractWidth,
       height: extractHeight,
     })
-    .jpeg({ quality: 90 })
+    // Cap longest side at 1024px to keep base64 payload small for Gemini
+    .resize(1024, undefined, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 80 })
     .toBuffer();
 
   return { buffer: cropped, mimeType: "image/jpeg" };

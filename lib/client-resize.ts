@@ -3,7 +3,7 @@
  * Uses an off-screen canvas to re-encode as JPEG at reduced dimensions.
  */
 
-const MAX_DIMENSION = 2048;
+const MAX_DIMENSION = 1536;
 const JPEG_QUALITY = 0.85;
 
 export async function resizeImageFile(file: File): Promise<File> {
