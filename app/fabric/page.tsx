@@ -9,18 +9,18 @@ import { useFlow } from "../../components/flow-provider";
 export default function FabricPage() {
   const router = useRouter();
   const {
-    furnitureFile,
+    originalImageUrl,
     furniturePreviewUrl,
     selectedFabricId,
     setSelectedFabricId,
   } = useFlow();
 
   useEffect(() => {
-    // Direct access guard: upload step must come first.
-    if (!furnitureFile || !furniturePreviewUrl) {
+    // Guard: the image must have been uploaded and processed first
+    if (!originalImageUrl) {
       router.replace("/upload");
     }
-  }, [furnitureFile, furniturePreviewUrl, router]);
+  }, [originalImageUrl, router]);
 
   return (
     <FlowShell step={2}>

@@ -33,7 +33,7 @@ async function uploadToSupabase(
 
   const { error } = await client.storage
     .from(bucket)
-    .upload(fileName, buffer, { contentType, upsert: false });
+    .upload(fileName, buffer, { contentType, cacheControl: "3600", upsert: false });
 
   if (error) {
     throw new Error(`Supabase upload failed (${bucket}/${fileName}): ${error.message}`);

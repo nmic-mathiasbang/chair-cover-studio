@@ -2,18 +2,21 @@
 
 import Image from "next/image";
 import React, { ChangeEvent } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 
 type StepUploadProps = {
   furniturePreviewUrl: string | null;
   onFurnitureChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onContinue: () => void;
+  /** Show a spinner on the Continue button while the image is being processed */
+  uploading?: boolean;
 };
 
 export function StepUpload({
   furniturePreviewUrl,
   onFurnitureChange,
   onContinue,
+  uploading = false,
 }: StepUploadProps) {
   return (
     <div className="ds-card flex flex-col gap-[15px]">
@@ -35,7 +38,6 @@ export function StepUpload({
           Chair / furniture image
         </span>
 
-        {/* Two explicit phone-friendly entry points: camera or photo library */}
         <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2">
           <label
             htmlFor="furnitureCameraFile"
@@ -89,10 +91,17 @@ export function StepUpload({
       <button
         type="button"
         onClick={onContinue}
-        disabled={!furniturePreviewUrl}
+        disabled={!furniturePreviewUrl || uploading}
         className="ds-btn ds-btn-primary mt-[10px] w-full"
       >
-        Continue
+        {uploading ? (
+          <span className="flex items-center justify-center gap-[8px]">
+            <Loader2 size={16} className="animate-spin" />
+            Processing…
+          </span>
+        ) : (
+          "Continue"
+        )}
       </button>
     </div>
   );

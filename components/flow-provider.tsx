@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 type FlowState = {
   furnitureFile: File | null;
@@ -10,6 +10,7 @@ type FlowState = {
   generatedImageUrl: string | null;
   setFurniture: (file: File | null, previewUrl: string | null) => void;
   setSelectedFabricId: (id: string) => void;
+  setOriginalImageUrl: (url: string) => void;
   setResultImages: (originalUrl: string, generatedUrl: string) => void;
   clearResultImages: () => void;
   resetFlow: () => void;
@@ -26,32 +27,43 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   );
   const [selectedFabricId, setSelectedFabricId] =
     useState<string>(DEFAULT_FABRIC_ID);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
+  const [originalImageUrl, setOriginalImageUrlState] = useState<string | null>(null);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
-  // Keep a small helper to update upload state together.
-  const setFurniture = (file: File | null, previewUrl: string | null) => {
-    setFurnitureFile(file);
-    setFurniturePreviewUrl(previewUrl);
-  };
+  // Stable function references — React state setters are stable, so useCallback
+  // with empty deps produces refs that never change between renders.
+  const setFurniture = useCallback(
+    (file: File | null, previewUrl: string | null) => {
+      setFurnitureFile(file);
+      setFurniturePreviewUrl(previewUrl);
+    },
+    [],
+  );
 
-  const setResultImages = (originalUrl: string, generatedUrl: string) => {
-    setOriginalImageUrl(originalUrl);
-    setGeneratedImageUrl(generatedUrl);
-  };
+  const setOriginalImageUrl = useCallback((url: string) => {
+    setOriginalImageUrlState(url);
+  }, []);
 
-  const clearResultImages = () => {
-    setOriginalImageUrl(null);
+  const setResultImages = useCallback(
+    (originalUrl: string, generatedUrl: string) => {
+      setOriginalImageUrlState(originalUrl);
+      setGeneratedImageUrl(generatedUrl);
+    },
+    [],
+  );
+
+  const clearResultImages = useCallback(() => {
+    setOriginalImageUrlState(null);
     setGeneratedImageUrl(null);
-  };
+  }, []);
 
-  const resetFlow = () => {
+  const resetFlow = useCallback(() => {
     setFurnitureFile(null);
     setFurniturePreviewUrl(null);
     setSelectedFabricId(DEFAULT_FABRIC_ID);
-    setOriginalImageUrl(null);
+    setOriginalImageUrlState(null);
     setGeneratedImageUrl(null);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -62,6 +74,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       generatedImageUrl,
       setFurniture,
       setSelectedFabricId,
+      setOriginalImageUrl,
       setResultImages,
       clearResultImages,
       resetFlow,
@@ -72,6 +85,11 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       selectedFabricId,
       originalImageUrl,
       generatedImageUrl,
+      setFurniture,
+      setOriginalImageUrl,
+      setResultImages,
+      clearResultImages,
+      resetFlow,
     ],
   );
 

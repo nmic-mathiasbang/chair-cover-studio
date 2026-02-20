@@ -1,6 +1,6 @@
 "use client";
 
-import React, { ChangeEvent, useCallback } from "react";
+import React, { ChangeEvent, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { StepUpload } from "../../components/step-upload";
@@ -12,7 +12,14 @@ const MAX_MAIN_FILE_SIZE = 10 * 1024 * 1024;
 
 export default function UploadPage() {
   const router = useRouter();
-  const { furniturePreviewUrl, setFurniture, clearResultImages } = useFlow();
+  const {
+    furnitureFile,
+    furniturePreviewUrl,
+    setFurniture,
+    setOriginalImageUrl,
+    clearResultImages,
+  } = useFlow();
+  const [uploading, setUploading] = useState(false);
 
   const handleFurnitureChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -27,7 +34,6 @@ export default function UploadPage() {
         return;
       }
 
-      // Resize large photos client-side to stay within Vercel body limits.
       const resized = await resizeImageFile(file);
 
       clearResultImages();
@@ -36,10 +42,39 @@ export default function UploadPage() {
     [clearResultImages, setFurniture],
   );
 
-  const handleContinue = useCallback(() => {
-    if (!furniturePreviewUrl) return;
-    router.push("/fabric");
-  }, [furniturePreviewUrl, router]);
+  // Upload, crop, and persist the image when user clicks Continue
+  const handleContinue = useCallback(async () => {
+    if (!furnitureFile) return;
+    setUploading(true);
+
+    try {
+      const fd = new FormData();
+      fd.set("furnitureFile", furnitureFile);
+
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+
+      const ct = res.headers.get("content-type") ?? "";
+      if (!ct.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(text || `Upload error (${res.status})`);
+      }
+
+      const data = (await res.json()) as
+        | { success: true; originalImageUrl: string }
+        | { success: false; error: string };
+
+      if (!res.ok || !data.success) {
+        throw new Error("error" in data ? data.error : "Upload failed.");
+      }
+
+      setOriginalImageUrl(data.originalImageUrl);
+      router.push("/fabric");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }, [furnitureFile, router, setOriginalImageUrl]);
 
   return (
     <FlowShell step={1}>
@@ -47,6 +82,7 @@ export default function UploadPage() {
         furniturePreviewUrl={furniturePreviewUrl}
         onFurnitureChange={handleFurnitureChange}
         onContinue={handleContinue}
+        uploading={uploading}
       />
     </FlowShell>
   );
