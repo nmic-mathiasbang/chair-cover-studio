@@ -1,23 +1,16 @@
-import { put } from "@vercel/blob";
+import { getSupabase } from "./supabase";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const uploadsDir = path.join(process.cwd(), "public", "uploads");
 const generatedDir = path.join(process.cwd(), "public", "generated");
 
-/** Check at runtime — env can be missing at build time on Vercel. */
-function shouldUseBlob(): boolean {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
-}
-
-/** On Vercel the filesystem is read-only; never attempt local writes. */
-function isVercel(): boolean {
-  return process.env.VERCEL === "1";
-}
-
-/** Build URL for our API route that streams private blobs to the client. */
-function buildBlobApiUrl(pathname: string): string {
-  return `/api/blob?pathname=${encodeURIComponent(pathname)}`;
+/** Runtime check: use Supabase when URL + key are set. */
+function shouldUseSupabase(): boolean {
+  return !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 }
 
 async function ensureLocalDirs() {
@@ -28,32 +21,46 @@ async function ensureLocalDirs() {
 }
 
 /**
- * Save uploaded original (cropped 2:3). Uses Vercel Blob when BLOB_READ_WRITE_TOKEN
- * is set, otherwise falls back to local public/ folder (local dev only).
+ * Upload a buffer to a Supabase Storage bucket and return the public URL.
+ */
+async function uploadToSupabase(
+  bucket: string,
+  fileName: string,
+  buffer: Buffer,
+  contentType: string,
+): Promise<string> {
+  const client = getSupabase();
+
+  const { error } = await client.storage
+    .from(bucket)
+    .upload(fileName, buffer, { contentType, upsert: false });
+
+  if (error) {
+    throw new Error(`Supabase upload failed (${bucket}/${fileName}): ${error.message}`);
+  }
+
+  // Public bucket — get the permanent public URL
+  const { data } = client.storage.from(bucket).getPublicUrl(fileName);
+  return data.publicUrl;
+}
+
+/**
+ * Save uploaded original (cropped 2:3). Uses Supabase Storage when configured,
+ * otherwise falls back to local public/ folder (local dev only).
  */
 export async function saveUploadedOriginal(
   buffer: Buffer,
   extension: string,
 ): Promise<string> {
   const fileName = `upload-${Date.now()}.${extension}`;
-  const contentType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+  const contentType =
+    extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
 
-  if (shouldUseBlob()) {
-    // Use private access to match store; private blobs are served via /api/blob
-    const blob = await put(`uploads/${fileName}`, buffer, {
-      access: "private",
-      contentType,
-      addRandomSuffix: true,
-    });
-    return buildBlobApiUrl(blob.pathname);
+  if (shouldUseSupabase()) {
+    return uploadToSupabase("uploads", fileName, buffer, contentType);
   }
 
-  if (isVercel()) {
-    throw new Error(
-      "BLOB_READ_WRITE_TOKEN is required on Vercel. Add it in Project Settings → Environment Variables.",
-    );
-  }
-
+  // Local dev fallback
   await ensureLocalDirs();
   const absPath = path.join(uploadsDir, fileName);
   await writeFile(absPath, buffer);
@@ -61,7 +68,7 @@ export async function saveUploadedOriginal(
 }
 
 /**
- * Save generated image. Uses Vercel Blob when BLOB_READ_WRITE_TOKEN is set,
+ * Save generated image. Uses Supabase Storage when configured,
  * otherwise falls back to local public/ folder (local dev only).
  */
 export async function saveGeneratedImage(
@@ -69,24 +76,14 @@ export async function saveGeneratedImage(
   extension: string,
 ): Promise<string> {
   const fileName = `generated-${Date.now()}.${extension}`;
-  const contentType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+  const contentType =
+    extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
 
-  if (shouldUseBlob()) {
-    // Use private access to match store; private blobs are served via /api/blob
-    const blob = await put(`generated/${fileName}`, buffer, {
-      access: "private",
-      contentType,
-      addRandomSuffix: true,
-    });
-    return buildBlobApiUrl(blob.pathname);
+  if (shouldUseSupabase()) {
+    return uploadToSupabase("generated", fileName, buffer, contentType);
   }
 
-  if (isVercel()) {
-    throw new Error(
-      "BLOB_READ_WRITE_TOKEN is required on Vercel. Add it in Project Settings → Environment Variables.",
-    );
-  }
-
+  // Local dev fallback
   await ensureLocalDirs();
   const absPath = path.join(generatedDir, fileName);
   await writeFile(absPath, buffer);
@@ -94,14 +91,12 @@ export async function saveGeneratedImage(
 }
 
 /**
- * Read a file as base64. Used for preset swatches in public/swatches (local only).
- * For Blob URLs we fetch and convert.
+ * Read a file as base64. Used for preset swatches in public/swatches.
  */
 export async function readPublicFileAsBase64(publicPath: string): Promise<{
   base64: string;
   mimeType: string;
 }> {
-  // Swatch paths are always local (public/swatches/*).
   const normalizedPath = publicPath.replace(/^\//, "");
   const absolutePath = path.join(process.cwd(), "public", normalizedPath);
   const fileBuffer = await readFile(absolutePath);

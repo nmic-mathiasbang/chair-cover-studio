@@ -28,21 +28,45 @@ export function StepUpload({
       </p>
 
       <div className="flex flex-col gap-[8px]">
-        <label
-          htmlFor="furnitureFile"
+        <span
           className="ds-overline"
           style={{ color: "var(--ds-text-secondary)" }}
         >
           Chair / furniture image
-        </label>
+        </span>
+
+        {/* Two explicit phone-friendly entry points: camera or photo library */}
+        <div className="grid grid-cols-1 gap-[10px] sm:grid-cols-2">
+          <label
+            htmlFor="furnitureCameraFile"
+            className="ds-btn ds-btn-secondary cursor-pointer text-center"
+          >
+            Take photo
+          </label>
+          <label
+            htmlFor="furnitureLibraryFile"
+            className="ds-btn ds-btn-secondary cursor-pointer text-center"
+          >
+            Choose from photos
+          </label>
+        </div>
+
         <input
-          id="furnitureFile"
-          name="furnitureFile"
+          id="furnitureCameraFile"
+          name="furnitureCameraFile"
           type="file"
           accept="image/*"
           capture="environment"
           onChange={onFurnitureChange}
-          className="ds-input"
+          className="hidden"
+        />
+        <input
+          id="furnitureLibraryFile"
+          name="furnitureLibraryFile"
+          type="file"
+          accept="image/*"
+          onChange={onFurnitureChange}
+          className="hidden"
         />
       </div>
 

@@ -10,7 +10,8 @@ export async function cropTo2x3(buffer: Buffer, mimeType: string): Promise<{
   buffer: Buffer;
   mimeType: string;
 }> {
-  const image = sharp(buffer);
+  // Auto-orient based on EXIF so phone images keep the expected rotation.
+  const image = sharp(buffer).rotate();
   const { width, height } = await image.metadata();
 
   if (!width || !height) {

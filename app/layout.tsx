@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "../components/ui/sonner";
+import { FlowProvider } from "../components/flow-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -24,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} antialiased`}>
-        {children}
+        <FlowProvider>{children}</FlowProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>

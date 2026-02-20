@@ -12,7 +12,6 @@ import {
 
 const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxMainImageSize = 10 * 1024 * 1024;
-const maxReferenceImageSize = 5 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
   const generationStartTime = Date.now();
@@ -20,7 +19,6 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const furnitureFile = formData.get("furnitureFile") as File | null;
-    const referenceFile = formData.get("referenceFile") as File | null;
     const selectedFabricId =
       (formData.get("selectedFabricId") as string | null) ?? "";
 
@@ -47,32 +45,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!selectedFabricId && !referenceFile) {
+    if (!selectedFabricId) {
       return NextResponse.json(
         {
           success: false,
-          error: "Pick a fabric swatch or upload a reference fabric image.",
+          error: "Please choose one of the preset fabric swatches.",
         },
         { status: 400 },
       );
-    }
-
-    if (referenceFile) {
-      if (!allowedTypes.includes(referenceFile.type)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Reference image must be JPEG, PNG, or WebP.",
-          },
-          { status: 400 },
-        );
-      }
-      if (referenceFile.size > maxReferenceImageSize) {
-        return NextResponse.json(
-          { success: false, error: "Reference image must be 5 MB or less." },
-          { status: 400 },
-        );
-      }
     }
 
     // --- Crop user image to 2:3 and convert to base64 ----------------------
@@ -90,33 +70,28 @@ export async function POST(request: NextRequest) {
       extensionFromMimeType(croppedMimeType),
     );
 
-    // --- Resolve fabric info & reference image -----------------------------
+    // --- Resolve selected fabric swatch -----------------------------------
 
     const selectedFabric = selectedFabricId
       ? (getFabricById(selectedFabricId) ?? null)
       : null;
 
-    let referenceImageBase64: string | null = null;
-    let referenceImageMimeType = "image/jpeg";
-
-    if (referenceFile) {
-      const refBuffer = Buffer.from(await referenceFile.arrayBuffer());
-      referenceImageBase64 = refBuffer.toString("base64");
-      referenceImageMimeType = referenceFile.type;
-    } else if (selectedFabric) {
-      const localSwatch = await readPublicFileAsBase64(
-        selectedFabric.swatchPath,
+    if (!selectedFabric) {
+      return NextResponse.json(
+        { success: false, error: "Selected swatch was not found." },
+        { status: 400 },
       );
-      referenceImageBase64 = localSwatch.base64;
-      referenceImageMimeType = localSwatch.mimeType;
     }
+
+    const localSwatch = await readPublicFileAsBase64(selectedFabric.swatchPath);
+    const referenceImageBase64 = localSwatch.base64;
+    const referenceImageMimeType = localSwatch.mimeType;
 
     // --- Build the prompt --------------------------------------------------
 
-    const fabricName = selectedFabric?.name ?? "custom uploaded fabric";
-    const fabricHex = selectedFabric?.hex ?? "";
-    const fabricHint =
-      selectedFabric?.promptHint ?? "realistic furniture upholstery material";
+    const fabricName = selectedFabric.name;
+    const fabricHex = selectedFabric.hex;
+    const fabricHint = selectedFabric.promptHint;
 
     const prompt = `You are an expert furniture upholstery visualizer. Transform the provided furniture photo to show how it would look re-upholstered in the fabric "${fabricName}" (approximate color ${fabricHex}).
 
@@ -132,7 +107,7 @@ Key requirements:
 
 Generate the transformed furniture image.`;
 
-    // --- Build the content array (text + user image + optional ref) ---------
+    // --- Build the content array (text + user image + swatch ref) -----------
 
     const content: Array<
       | { type: "text"; text: string }
@@ -146,20 +121,18 @@ Generate the transformed furniture image.`;
       },
     ];
 
-    // Append reference image and extend the prompt when available.
-    if (referenceImageBase64) {
-      content.push({
-        type: "image",
-        image: referenceImageBase64,
-        mimeType: referenceImageMimeType,
-      });
-      content[0] = {
-        type: "text",
-        text:
-          prompt +
-          "\n\nUse the second image as the style / texture reference for the new upholstery fabric.",
-      };
-    }
+    // Always append the selected swatch as second image reference.
+    content.push({
+      type: "image",
+      image: referenceImageBase64,
+      mimeType: referenceImageMimeType,
+    });
+    content[0] = {
+      type: "text",
+      text:
+        prompt +
+        "\n\nUse the second image as the exact style / texture reference for the new upholstery fabric.",
+    };
 
     // --- Call Gemini image generation ---------------------------------------
 
@@ -176,7 +149,7 @@ Generate the transformed furniture image.`;
           responseModalities: ["IMAGE"],
           imageConfig: {
             aspectRatio: "2:3",
-            imageSize: "2K",
+            imageSize: "1K",
           },
         },
       },
