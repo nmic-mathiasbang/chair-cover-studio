@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { StepUpload } from "../../components/step-upload";
 import { FlowShell } from "../../components/flow-shell";
 import { useFlow } from "../../components/flow-provider";
+import { resizeImageFile } from "../../lib/client-resize";
 
 const MAX_MAIN_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -14,7 +15,7 @@ export default function UploadPage() {
   const { furniturePreviewUrl, setFurniture, clearResultImages } = useFlow();
 
   const handleFurnitureChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
+    async (event: ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0] ?? null;
       if (!file) return;
       if (!file.type.startsWith("image/")) {
@@ -25,9 +26,12 @@ export default function UploadPage() {
         toast.error("Image must be 10 MB or less.");
         return;
       }
-      // Clear previous result when a new source image is chosen.
+
+      // Resize large photos client-side to stay within Vercel body limits.
+      const resized = await resizeImageFile(file);
+
       clearResultImages();
-      setFurniture(file, URL.createObjectURL(file));
+      setFurniture(resized, URL.createObjectURL(resized));
     },
     [clearResultImages, setFurniture],
   );

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
+
+// Allow up to 60s for Gemini image generation on Vercel
+export const maxDuration = 60;
 import { getFabricById } from "../../../lib/fabrics";
 import { cropTo2x3 } from "../../../lib/image-crop";
 import {

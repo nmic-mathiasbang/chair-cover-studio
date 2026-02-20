@@ -26,6 +26,14 @@ export default function GeneratingPage() {
         fd.set("selectedFabricId", selectedFabricId);
 
         const res = await fetch("/api/generate", { method: "POST", body: fd });
+
+        // Handle non-JSON error responses (e.g. Vercel 413 "Request Entity Too Large")
+        const contentType = res.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(text || `Server error (${res.status})`);
+        }
+
         const data = (await res.json()) as
           | { success: true; generatedImageUrl: string; originalImageUrl: string }
           | { success: false; error: string };
