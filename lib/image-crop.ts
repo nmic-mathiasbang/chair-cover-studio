@@ -10,9 +10,12 @@ export async function cropTo2x3(buffer: Buffer, mimeType: string): Promise<{
   buffer: Buffer;
   mimeType: string;
 }> {
-  // Auto-orient based on EXIF so phone images keep the expected rotation.
-  const image = sharp(buffer).rotate();
-  const { width, height } = await image.metadata();
+  // First pass: apply EXIF rotation so the pixel data matches what the user sees.
+  // We must materialise the rotated buffer before reading metadata, because
+  // .metadata() returns pre-rotation dimensions on the original input.
+  const rotatedBuffer = await sharp(buffer).rotate().toBuffer();
+
+  const { width, height } = await sharp(rotatedBuffer).metadata();
 
   if (!width || !height) {
     throw new Error("Could not read image dimensions.");
@@ -35,7 +38,7 @@ export async function cropTo2x3(buffer: Buffer, mimeType: string): Promise<{
     extractTop = Math.round((height - extractHeight) / 2);
   }
 
-  const cropped = await image
+  const cropped = await sharp(rotatedBuffer)
     .extract({
       left: Math.max(0, extractLeft),
       top: Math.max(0, extractTop),
