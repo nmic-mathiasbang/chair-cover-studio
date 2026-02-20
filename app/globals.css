@@ -1,0 +1,264 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ── Design system tokens ────────────────────────────────────────────── */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* Sharp corners — 0px everywhere */
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+}
+
+/* Dark-only design: :root IS the dark palette */
+:root {
+  --radius: 0px;
+
+  /* Surfaces */
+  --background: #111110;
+  --foreground: #eeeee8;
+  --card: #1a1a19;
+  --card-foreground: #eeeee8;
+  --popover: #222221;
+  --popover-foreground: #eeeee8;
+
+  /* Primary — #D94030 */
+  --primary: #D94030;
+  --primary-foreground: #110504;
+
+  /* Secondary — #1a1a1a */
+  --secondary: #1a1a1a;
+  --secondary-foreground: #cdcdcd;
+
+  /* Muted */
+  --muted: #222221;
+  --muted-foreground: #88887e;
+
+  /* Accent — #206cdf */
+  --accent: #206cdf;
+  --accent-foreground: #f2f6fd;
+
+  /* Semantic */
+  --destructive: #EF4444;
+
+  /* Borders & rings */
+  --border: rgba(255,255,255,0.12);
+  --input: rgba(255,255,255,0.12);
+  --ring: #206cdf;
+
+  /* Design-system surface tokens */
+  --ds-bg: #111110;
+  --ds-surface-1: #1a1a19;
+  --ds-surface-2: #222221;
+  --ds-surface-3: #2a2a28;
+  --ds-text-primary: #eeeee8;
+  --ds-text-secondary: #bbbbb4;
+  --ds-text-tertiary: #88887e;
+  --ds-text-disabled: #55554e;
+
+  /* Border scale */
+  --ds-border-base: rgba(255,255,255,0.12);
+  --ds-border-divider: rgba(255,255,255,0.06);
+  --ds-border-hover: rgba(255,255,255,0.18);
+  --ds-border-focus: rgba(255,255,255,0.24);
+
+  /* Primary interactive states */
+  --ds-primary-hover: #be3223;
+  --ds-primary-active: #9f2a1d;
+  --ds-ghost-hover: rgba(217,64,48,0.08);
+
+  /* Motion easing */
+  --ease-micro: cubic-bezier(0,.9,.1,1);
+  --ease-enter: cubic-bezier(0,.9,.1,1);
+  --ease-exit: cubic-bezier(.4,0,1,1);
+  --ease-move: cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Base layer ──────────────────────────────────────────────────────── */
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--ds-bg);
+    color: var(--ds-text-primary);
+    font-family: var(--font-inter), 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ── Typography utilities ────────────────────────────────────────────── */
+
+.ds-overline  { font-size: 10px; font-weight: 500; line-height: 1.2; letter-spacing: 0.1em; text-transform: uppercase; }
+.ds-caption   { font-size: 12px; font-weight: 400; line-height: 1.4; letter-spacing: 0.02em; }
+.ds-body      { font-size: 18px; font-weight: 400; line-height: 1.7; letter-spacing: 0em; }
+.ds-lead      { font-size: 22px; font-weight: 400; line-height: 1.5; letter-spacing: 0em; }
+.ds-title     { font-size: 36px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.ds-headline  { font-size: 52px; font-weight: 700; line-height: 1;   letter-spacing: -0.02em; }
+
+/* ── Button system ───────────────────────────────────────────────────── */
+
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 0px;
+  cursor: pointer;
+  transition: all 60ms var(--ease-micro);
+  outline: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ds-btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.ds-btn:active {
+  transform: scale(0.98);
+}
+
+.ds-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Primary */
+.ds-btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.ds-btn-primary:hover { background: var(--ds-primary-hover); }
+.ds-btn-primary:active { background: var(--ds-primary-active); }
+
+/* Secondary (outlined) */
+.ds-btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+.ds-btn-secondary:hover { background: var(--ds-ghost-hover); }
+
+/* Ghost */
+.ds-btn-ghost {
+  background: transparent;
+  color: var(--primary);
+}
+.ds-btn-ghost:hover { background: var(--ds-ghost-hover); }
+
+/* ── Card system ─────────────────────────────────────────────────────── */
+
+.ds-card {
+  background: var(--ds-surface-1);
+  border: 1px solid var(--ds-border-base);
+  border-radius: 0px;
+  padding: 15px;
+  transition: border-color 60ms var(--ease-micro), transform 60ms var(--ease-micro);
+}
+
+/* ── Input system ────────────────────────────────────────────────────── */
+
+.ds-input {
+  height: 40px;
+  border-radius: 0px;
+  border: 1px solid var(--ds-border-base);
+  background: transparent;
+  color: var(--ds-text-primary);
+  padding: 0 12px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+  transition: border-color 60ms var(--ease-micro), box-shadow 60ms var(--ease-micro);
+}
+
+.ds-input::placeholder { color: var(--ds-text-tertiary); }
+.ds-input:hover { border-color: var(--ds-border-hover); }
+.ds-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(217,64,48,0.2); }
+.ds-input:disabled { background: var(--ds-surface-2); opacity: 0.4; }
+
+/* File inputs */
+.ds-input[type="file"] {
+  padding: 8px 12px;
+  height: auto;
+  min-height: 40px;
+}
+
+.ds-input[type="file"]::file-selector-button {
+  height: 28px;
+  padding: 0 12px;
+  margin-right: 10px;
+  border: 1px solid var(--ds-border-base);
+  border-radius: 0px;
+  background: var(--ds-surface-2);
+  color: var(--ds-text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 60ms var(--ease-micro);
+}
+
+.ds-input[type="file"]::file-selector-button:hover {
+  background: var(--ds-surface-3);
+}
+
+/* ── Progress bar ────────────────────────────────────────────────────── */
+
+.ds-progress {
+  height: 3px;
+  width: 100%;
+  background: var(--ds-surface-2);
+  overflow: hidden;
+}
+
+.ds-progress-bar {
+  height: 100%;
+  background: var(--primary);
+  transition: width 300ms var(--ease-move);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
