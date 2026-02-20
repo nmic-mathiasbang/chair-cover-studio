@@ -39,9 +39,11 @@ The app uses **Vercel Blob** for persistent image storage when `BLOB_READ_WRITE_
 
 **Setup for Vercel:**
 
-1. Create a Blob store: Vercel Dashboard → your project → Storage → Create Database → Blob → set access to **Public**.
+1. Create a Blob store: Vercel Dashboard → your project → Storage → Create Database → Blob. **Private** and **Public** stores are both supported.
 2. The `BLOB_READ_WRITE_TOKEN` env var is added automatically. Ensure it’s applied to **Production**, **Preview**, and **Build**.
 3. For local dev: `vercel env pull`.
-4. Deploy. Uploads and generated images will persist and return public Blob URLs.
+4. Deploy. Uploads and generated images persist in Blob; private blobs are streamed via `/api/blob`.
 
 If you see `ENOENT: no such file or directory, mkdir '...public/uploads'`, the token is not reaching the runtime. Re-check that `BLOB_READ_WRITE_TOKEN` is set for all environments and redeploy.
+
+If you see `Cannot use public access on a private store`, the app now uses `access: "private"` and serves blobs through `/api/blob`.

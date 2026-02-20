@@ -15,6 +15,11 @@ function isVercel(): boolean {
   return process.env.VERCEL === "1";
 }
 
+/** Build URL for our API route that streams private blobs to the client. */
+function buildBlobApiUrl(pathname: string): string {
+  return `/api/blob?pathname=${encodeURIComponent(pathname)}`;
+}
+
 async function ensureLocalDirs() {
   await Promise.all([
     mkdir(uploadsDir, { recursive: true }),
@@ -34,12 +39,13 @@ export async function saveUploadedOriginal(
   const contentType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
 
   if (shouldUseBlob()) {
+    // Use private access to match store; private blobs are served via /api/blob
     const blob = await put(`uploads/${fileName}`, buffer, {
-      access: "public",
+      access: "private",
       contentType,
       addRandomSuffix: true,
     });
-    return blob.url;
+    return buildBlobApiUrl(blob.pathname);
   }
 
   if (isVercel()) {
@@ -66,12 +72,13 @@ export async function saveGeneratedImage(
   const contentType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
 
   if (shouldUseBlob()) {
+    // Use private access to match store; private blobs are served via /api/blob
     const blob = await put(`generated/${fileName}`, buffer, {
-      access: "public",
+      access: "private",
       contentType,
       addRandomSuffix: true,
     });
-    return blob.url;
+    return buildBlobApiUrl(blob.pathname);
   }
 
   if (isVercel()) {
