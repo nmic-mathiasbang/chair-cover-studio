@@ -6,7 +6,6 @@ import { Palette } from "lucide-react";
 import { FABRIC_OPTIONS } from "../lib/fabrics";
 
 type StepFabricProps = {
-  furniturePreviewUrl: string | null;
   selectedFabricId: string;
   onSelectFabric: (id: string) => void;
   onGenerate: () => void;
@@ -14,7 +13,6 @@ type StepFabricProps = {
 };
 
 export function StepFabric({
-  furniturePreviewUrl,
   selectedFabricId,
   onSelectFabric,
   onGenerate,
@@ -22,23 +20,6 @@ export function StepFabric({
 }: StepFabricProps) {
   return (
     <div className="flex flex-col gap-[20px]">
-      {/* Preview of uploaded furniture */}
-      {furniturePreviewUrl && (
-        <div className="ds-card flex flex-col gap-[8px]">
-          <span className="ds-overline" style={{ color: "var(--ds-text-tertiary)" }}>
-            Your furniture
-          </span>
-          <div className="relative w-full overflow-hidden border border-[var(--ds-border-base)]" style={{ aspectRatio: "2/3" }}>
-            <Image
-              src={furniturePreviewUrl}
-              alt="Furniture"
-              fill
-              className="object-cover"
-            />
-          </div>
-        </div>
-      )}
-
       {/* Fabric picker */}
       <div className="ds-card flex flex-col gap-[15px]">
         <div className="flex items-center gap-[10px]">

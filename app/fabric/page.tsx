@@ -8,12 +8,7 @@ import { useFlow } from "../../components/flow-provider";
 
 export default function FabricPage() {
   const router = useRouter();
-  const {
-    originalImageUrl,
-    furniturePreviewUrl,
-    selectedFabricId,
-    setSelectedFabricId,
-  } = useFlow();
+  const { originalImageUrl, selectedFabricId, setSelectedFabricId } = useFlow();
 
   useEffect(() => {
     // Guard: the image must have been uploaded and processed first
@@ -25,7 +20,6 @@ export default function FabricPage() {
   return (
     <FlowShell step={2}>
       <StepFabric
-        furniturePreviewUrl={furniturePreviewUrl}
         selectedFabricId={selectedFabricId}
         onSelectFabric={setSelectedFabricId}
         onGenerate={() => router.push("/generating")}
