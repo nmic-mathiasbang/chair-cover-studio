@@ -35,13 +35,13 @@ No external database or storage is used locally.
 
 ## Deploying to Vercel
 
-**Important:** The app writes uploads and generated images to `public/uploads` and `public/generated`. On Vercel (and any serverless environment), the filesystem is **ephemeral**—writes succeed during a request, but files are **not persisted** across requests or deployments. Users will see broken image URLs after generation.
+The app uses **Vercel Blob** for persistent image storage when `BLOB_READ_WRITE_TOKEN` is set. Without it (local dev), images are written to `public/uploads` and `public/generated`.
 
-To deploy to production, you need external storage, for example:
+**Setup for Vercel:**
 
-- **Vercel Blob** — `@vercel/blob` for simple file storage, good fit for Vercel
-- **Cloudinary** — Image hosting with transformations
-- **Supabase Storage** — If you already use Supabase
-- **AWS S3** — For more control
+1. Create a Blob store: Vercel Dashboard → your project → Storage → Create Database → Blob → set access to **Public**.
+2. The `BLOB_READ_WRITE_TOKEN` env var is added automatically. Ensure it’s applied to **Production**, **Preview**, and **Build**.
+3. For local dev: `vercel env pull`.
+4. Deploy. Uploads and generated images will persist and return public Blob URLs.
 
-You would replace the `file-storage.ts` logic with calls to your chosen storage service and return public URLs instead of local paths.
+If you see `ENOENT: no such file or directory, mkdir '...public/uploads'`, the token is not reaching the runtime. Re-check that `BLOB_READ_WRITE_TOKEN` is set for all environments and redeploy.

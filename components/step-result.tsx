@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { Download, RotateCcw, Sparkles } from "lucide-react";
-import { BeforeAfterSlider } from "./before-after-slider";
 
 type StepResultProps = {
   originalImageUrl: string | null;
@@ -16,6 +15,7 @@ export function StepResult({
   generatedImageUrl,
   onTryAgain,
 }: StepResultProps) {
+  const [showingAfter, setShowingAfter] = useState(true);
   const hasBoth = originalImageUrl && generatedImageUrl;
 
   return (
@@ -31,59 +31,58 @@ export function StepResult({
           Download your AI-generated furniture preview or try again with different fabric.
         </p>
 
-        {hasBoth ? (
-          <div className="flex flex-col gap-[10px]">
-            <span className="ds-overline" style={{ color: "var(--ds-text-tertiary)" }}>
-              Drag the slider to compare before and after (2:3)
-            </span>
-            <BeforeAfterSlider
-              beforeSrc={originalImageUrl}
-              afterSrc={generatedImageUrl}
-              beforeLabel="Original"
-              afterLabel="Generated"
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-[15px] sm:grid-cols-2">
-            {originalImageUrl && (
-              <div className="flex flex-col gap-[5px]">
-                <span className="ds-overline" style={{ color: "var(--ds-text-tertiary)" }}>
-                  Original
-                </span>
-                <div
-                  className="relative w-full overflow-hidden border border-[var(--ds-border-base)]"
-                  style={{ aspectRatio: "2/3" }}
-                >
-                  <Image
-                    src={originalImageUrl}
-                    alt="Original upload"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-            )}
+        <div className="flex flex-col gap-[10px]">
+          {hasBoth && (
+            <div className="flex gap-0" style={{ borderBottom: "1px solid var(--ds-border-divider)" }}>
+              <button
+                type="button"
+                onClick={() => setShowingAfter(false)}
+                className="ds-overline px-[20px] py-[10px] transition-colors duration-[60ms]"
+                style={{
+                  color: !showingAfter ? "var(--primary)" : "var(--ds-text-tertiary)",
+                  borderBottom: !showingAfter ? "2px solid var(--primary)" : "2px solid transparent",
+                  background: "transparent",
+                }}
+              >
+                Before
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowingAfter(true)}
+                className="ds-overline px-[20px] py-[10px] transition-colors duration-[60ms]"
+                style={{
+                  color: showingAfter ? "var(--primary)" : "var(--ds-text-tertiary)",
+                  borderBottom: showingAfter ? "2px solid var(--primary)" : "2px solid transparent",
+                  background: "transparent",
+                }}
+              >
+                After
+              </button>
+            </div>
+          )}
 
-            {generatedImageUrl && (
-              <div className="flex flex-col gap-[5px]">
-                <span className="ds-overline" style={{ color: "var(--ds-text-tertiary)" }}>
-                  Generated
-                </span>
-                <div
-                  className="relative w-full overflow-hidden border border-[var(--ds-border-base)]"
-                  style={{ aspectRatio: "2/3" }}
-                >
-                  <Image
-                    src={generatedImageUrl}
-                    alt="Generated cover"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
+          <div
+            className="relative w-full overflow-hidden border border-[var(--ds-border-base)]"
+            style={{ aspectRatio: "2/3" }}
+          >
+            {originalImageUrl && (!showingAfter || !generatedImageUrl) && (
+              <Image
+                src={originalImageUrl}
+                alt="Original upload"
+                fill
+                className="object-cover"
+              />
+            )}
+            {generatedImageUrl && (showingAfter || !originalImageUrl) && (
+              <Image
+                src={generatedImageUrl}
+                alt="Generated cover"
+                fill
+                className="object-cover"
+              />
             )}
           </div>
-        )}
+        </div>
 
         <div className="flex flex-wrap gap-[10px] pt-[10px]">
           <button type="button" onClick={onTryAgain} className="ds-btn ds-btn-secondary">
