@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import React, { useState } from "react";
 import { Download, RotateCcw, Sparkles } from "lucide-react";
 
@@ -61,24 +60,23 @@ export function StepResult({
             </div>
           )}
 
+          {/* Use native img to avoid Next.js image optimization issues with external URLs */}
           <div
             className="relative w-full overflow-hidden border border-[var(--ds-border-base)]"
             style={{ aspectRatio: "2/3" }}
           >
             {originalImageUrl && (!showingAfter || !generatedImageUrl) && (
-              <Image
+              <img
                 src={originalImageUrl}
                 alt="Original upload"
-                fill
-                className="object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             )}
             {generatedImageUrl && (showingAfter || !originalImageUrl) && (
-              <Image
+              <img
                 src={generatedImageUrl}
                 alt="Generated cover"
-                fill
-                className="object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
               />
             )}
           </div>
